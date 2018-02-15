@@ -62,6 +62,8 @@ case $VMSW in
     cp -a --sparse=always $BASE $OUT
     libexec/config-bootstrap-fixup
     on-target -u root bash < target-bin/bootstrap-fixup
+    on-target -u root apt-get remove -y resolvconf
+    echo nameserver 8.8.4.4 | on-target -u root tee /etc/resolv.conf
     ;;
   VBOX)
     VBoxManage snapshot "Gitian-${SUITE}-${ARCH}" restore "Gitian-Clean"

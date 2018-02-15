@@ -14,7 +14,13 @@ packages:
 - "libtool"
 - "automake"
 - "faketime"
+- "cmake"
 - "bsdmainutils"
+- "libboost-all-dev"
+- "qt5-qmake"
+- "libprotobuf-dev"
+- "qtbase5-dev"
+- "qtbase5-dev-tools"
 - "mingw-w64"
 - "g++-mingw-w64"
 - "nsis"
@@ -107,11 +113,11 @@ script: |
   export PATH=${WRAP_DIR}:${PATH}
 
   cd cryptonotewallet
-  BASEPREFIX=`pwd`/depends
+  #BASEPREFIX=`pwd`/depends
   # Build dependencies for each host
-  for i in $HOSTS; do
-    make ${MAKEOPTS} -C ${BASEPREFIX} HOST="${i}"
-  done
+  #for i in $HOSTS; do
+  #  make ${MAKEOPTS} -C ${BASEPREFIX} HOST="${i}"
+  #done
 
   # Faketime for binaries
   export PATH=${PATH_orig}
@@ -121,16 +127,18 @@ script: |
   export PATH=${WRAP_DIR}:${PATH}
 
   # Create the release tarball using (arbitrarily) the first host
-  ./autogen.sh
-  CONFIG_SITE=${BASEPREFIX}/`echo "${HOSTS}" | awk '{print $1;}'`/share/config.site ./configure --prefix=/
-  make dist
+  mkdir build
+  cd build
+  cmake ..
+  #CONFIG_SITE=${BASEPREFIX}/`echo "${HOSTS}" | awk '{print $1;}'`/share/config.site 
+  make 
   SOURCEDIST=`echo cryptonotewallet-*.tar.gz`
   DISTNAME=`echo ${SOURCEDIST} | sed 's/.tar.*//'`
 
   # Correct tar file order
   mkdir -p temp
   pushd temp
-  tar xf ../$SOURCEDIST
+  # tar xf ../$SOURCEDIST
   find cryptonotewallet-* | sort | tar --no-recursion --mode='u+rw,go+r-w,a+X' --owner=0 --group=0 -c -T - | gzip -9n > ../$SOURCEDIST
   mkdir -p $OUTDIR/src
   cp ../$SOURCEDIST $OUTDIR/src
@@ -146,10 +154,11 @@ script: |
     mkdir -p ${INSTALLPATH}
     tar --strip-components=1 -xf ../$SOURCEDIST
 
-    CONFIG_SITE=${BASEPREFIX}/${i}/share/config.site ./configure --prefix=/ --disable-ccache --disable-maintainer-mode --disable-dependency-tracking ${CONFIGFLAGS} CFLAGS="${HOST_CFLAGS}" CXXFLAGS="${HOST_CXXFLAGS}"
+    # CONFIG_SITE=${BASEPREFIX}/${i}/share/config.site ./configure --prefix=/ --disable-ccache --disable-maintainer-mode --disable-dependency-tracking ${CONFIGFLAGS} CFLAGS="${HOST_CFLAGS}" CXXFLAGS="${HOST_CXXFLAGS}"
+    cmake ../..
     make ${MAKEOPTS}
-    make ${MAKEOPTS} -C src check-security
-    make deploy
+    # make ${MAKEOPTS} -C src check-security
+    # make deploy
     make install DESTDIR=${INSTALLPATH}
     rename 's/-setup\.exe$/-setup-unsigned.exe/' *-setup.exe
     cp -f cryptonotewallet-*setup*.exe $OUTDIR/
